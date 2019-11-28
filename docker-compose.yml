@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  cars:
+    build:
+      context: .
+    # python ignores docker's default SIGTERM and eventually docker gives up and
+    # sends SIGKILL, so skip straight to the SIGKILL
+    stop_signal: SIGKILL
+    env_file: environment
+    depends_on:
+      - db
+      - elasticsearch
+    volumes:
+      - .:/code
+    ports:
+      - 8000:8000
+
+  db:
+    image: postgres:10.11
+    env_file: environment
+    volumes:
+      - ./etc/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
+
+  # Username: elastic
+  # Password: changeme
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.4.3
+    environment:
+      cluster.name: docker-cluster
+      http.host: 0.0.0.0
+      network.host: 0.0.0.0
+      transport.host: 127.0.0.1
+      # By default, the heap size of the elasticsearch container is 2gb, which is
+      # also the default for Docker for Mac, leading it to crash if we don't use less.
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+      # minimum_master_nodes need to be explicitly set when bound on a public IP
+      # set to 1 to allow single node clusters
+      # Details: https://github.com/elastic/elasticsearch/pull/17288
+      discovery.zen.minimum_master_nodes: 1
+      discovery.type: single-node
+    ports:
+      - 9200:9200 # RESTful API with JSON over HTTP
+      - 9300:9300 # Java API
+

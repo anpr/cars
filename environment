@@ -1,0 +1,6 @@
+#
+# Postgres & DB settings
+#
+POSTGRES_PASSWORD=password123
+DB_USER=postgres
+DB_PASSWORD=postgres
